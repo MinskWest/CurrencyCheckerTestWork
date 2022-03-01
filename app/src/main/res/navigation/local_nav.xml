@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/local_nav"
+    app:startDestination="@id/commonFragment">
+
+    <fragment
+        android:id="@+id/commonFragment"
+        android:name="com.example.currencycheckertestwork.presentation.fragments.CommonFragment"
+        android:label="CommonFragment" >
+    </fragment>
+</navigation>
