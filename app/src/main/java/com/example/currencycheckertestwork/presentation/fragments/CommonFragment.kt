@@ -14,6 +14,7 @@ import com.example.currencycheckertestwork.databinding.FragmentCommonBinding
 import com.example.currencycheckertestwork.di.MainComponent
 import com.example.currencycheckertestwork.di.ViewModelFactory
 import com.example.currencycheckertestwork.domain.Currency
+import com.example.currencycheckertestwork.domain.scheduler.SchedulerProvider
 import com.example.currencycheckertestwork.presentation.BaseFragment
 import com.example.currencycheckertestwork.presentation.adapters.CommonRecyclerViewAdapter
 import com.example.currencycheckertestwork.presentation.adapters.CommonRecyclerViewAdapter.Companion.isDeleteAction
@@ -21,6 +22,8 @@ import com.example.currencycheckertestwork.presentation.viewmodels.SharedViewMod
 import com.example.currencycheckertestwork.util.onClick
 import com.example.currencycheckertestwork.util.setVisible
 import com.example.currencysymbols.CurrencySymbolsManager
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import kotlinx.android.synthetic.main.sorting_view.*
 import javax.inject.Inject
 
@@ -35,8 +38,13 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
     @Inject
     lateinit var currencySymbolsManager: CurrencySymbolsManager
 
+    @Inject
+    lateinit var schedulerProvider: SchedulerProvider
+
     private var popularCurrencyList = mutableListOf<Currency>()
     private var favouriteCurrencyList = mutableListOf<Currency>()
+
+    private val disposable by lazy { CompositeDisposable() }
 
     private var isSortedMode = false
     private var isFavouriteMode = false
@@ -149,17 +157,31 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
     override fun initObservers() {
         super.initObservers()
 
-        corkCall()
+        disposable += viewModel.currentCurrency.subscribe()
+        disposable += viewModel.favouriteCurrency.subscribe()
 
-        viewModel.favouriteListToView.observe(viewLifecycleOwner, { state ->
-            observeListActon(favouriteCurrencyList, state ?: listOf())
-        })
-        viewModel.sortedListToView.observe(viewLifecycleOwner, { state ->
-            observeListActon(popularCurrencyList, state ?: listOf())
-        })
-        viewModel.errorListener.observe(viewLifecycleOwner, { state ->
-            if (state == true) showBasePopup(requireContext().resources.getString(R.string.base_error))
-        })
+        disposable += viewModel
+            .sortedListToView
+            .observeOn(schedulerProvider.main())
+            .map { listFromRoom ->
+                observeListActon(popularCurrencyList, listFromRoom)
+            }
+            .subscribe()
+
+        disposable += viewModel
+            .favouriteListToView
+            .observeOn(schedulerProvider.main())
+            .map { listFromRoom ->
+                observeListActon(favouriteCurrencyList, listFromRoom)
+            }
+            .subscribe()
+
+        disposable += viewModel.errorListener
+            .observeOn(schedulerProvider.main())
+            .map { isError ->
+                if (isError) showBasePopup(requireContext().resources.getString(R.string.base_error))
+            }
+            .subscribe()
     }
 
     private fun observeListActon(list: MutableList<Currency>, stateList: List<Currency>) {
@@ -169,12 +191,6 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
         }
         updateRecycler()
     }
-
-    private fun corkCall() =
-        with(viewModel) {
-            currencyListFromRoom.observe(viewLifecycleOwner, {})
-            favouriteCurrencyList.observe(viewLifecycleOwner, {})
-        }
 
     private fun updateRecycler() {
         when (isFavouriteMode) {
@@ -189,5 +205,10 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
             notifyDataSetChanged()
         }
         if (!isDeleteInsertFavAction) binding.currencyRecyclerView.scrollToPosition(0)
+    }
+
+    override fun onDestroy() {
+        disposable.dispose()
+        super.onDestroy()
     }
 }

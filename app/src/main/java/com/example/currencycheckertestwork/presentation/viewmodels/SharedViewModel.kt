@@ -1,7 +1,5 @@
 package com.example.currencycheckertestwork.presentation.viewmodels
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.currencycheckertestwork.constants.DataMode
 import com.example.currencycheckertestwork.constants.RETROFIT_LOAD_ERROR
@@ -13,6 +11,8 @@ import com.example.currencycheckertestwork.domain.Currency
 import com.example.currencycheckertestwork.domain.interaction.GetCurrencyDataUseCase
 import com.example.currencycheckertestwork.domain.interaction.RoomUseCase
 import io.reactivex.Completable
+import io.reactivex.Observable
+import io.reactivex.subjects.PublishSubject
 import java.util.*
 import javax.inject.Inject
 
@@ -21,70 +21,70 @@ class SharedViewModel @Inject constructor(
     private val roomUseCase: RoomUseCase
 ) : ViewModel() {
 
-    private val _currencyListFromRoom = roomUseCase.getFullList()
-    val currencyListFromRoom: LiveData<List<Currency>>
-        get() = _currencyListFromRoom
+    val favouriteListToView: PublishSubject<List<Currency>> = PublishSubject.create()
+    val sortedListToView: PublishSubject<List<Currency>> = PublishSubject.create()
+    val errorListener: PublishSubject<Boolean> = PublishSubject.create()
 
-    private val _favouriteCurrencyList = roomUseCase.getAllFavourite()
-    val favouriteCurrencyList: LiveData<List<Currency>>
-        get() = _favouriteCurrencyList
+    private val currentCurrencyList = mutableListOf<Currency>()
+    private val favouriteCurrencyList = mutableListOf<Currency>()
 
-    val favouriteListToView = MutableLiveData<List<Currency>>()
-    val sortedListToView = MutableLiveData<List<Currency>>()
-    val errorListener = MutableLiveData(false)
+    val currentCurrency: Observable<Unit> = roomUseCase.getFullList()
+        .map {
+            currentCurrencyList.clear()
+            currentCurrencyList.addAll(it)
+            sortedListToView.onNext(it)
+        }
+    val favouriteCurrency: Observable<Unit> = roomUseCase.getAllFavourite()
+        .map {
+            favouriteCurrencyList.clear()
+            favouriteCurrencyList.addAll(it)
+            favouriteListToView.onNext(it)
+        }
 
     fun loadData() {
         getCurrencyDataUseCase.loadData()
             .doOnSuccess { currentCurrencyDTO ->
                 loadCurrent(currentCurrencyDTO)
-                loadFavourite()
             }
             .subscribe()
     }
 
     private fun loadCurrent(currentCurrencyDTO: CurrentCurrencyDTO) {
         if (currentCurrencyDTO.loadValue.containsKey(RETROFIT_LOAD_ERROR)) {
-            val currentList = _currencyListFromRoom.value ?: listOf()
+            val currentList = listOf<Currency>()
             if (currentList.isEmpty()) {
                 // can't load and haven't saved value - view no internet popup
-                errorListener.postValue(true)
+                errorListener.onNext(true)
             } else {
                 // view saved version
-                sortedListToView.postValue(currentList)
+                sortedListToView.onNext(currentList)
             }
         } else {
             //update data in room
             roomUseCase.saveInRoom(currentCurrencyDTO.asDomainModel().transformToDbModel())
                 .doOnComplete {
-                    sortedListToView.postValue(currentCurrencyDTO.asDomainModel().value)
+                    sortedListToView.onNext(currentCurrencyDTO.asDomainModel().value)
                 }
                 .subscribe()
         }
     }
 
-    private fun loadFavourite() = favouriteListToView.postValue(_favouriteCurrencyList.value)
-
-    fun finalListToView(sortedMode: DataMode, isFavourite: Boolean) {
+    fun finalListToView(sortedMode: DataMode, isFavourite: Boolean) =
         when (isFavourite) {
-            true ->
-                favouriteListToView
-                    .postValue(findOutFinalList(sortedMode, favouriteListToView) ?: emptyList())
-            false ->
-                sortedListToView
-                    .postValue(findOutFinalList(sortedMode, currencyListFromRoom) ?: emptyList())
+            true -> favouriteListToView.onNext(findOutFinalList(sortedMode, favouriteCurrencyList))
+            false -> sortedListToView.onNext(findOutFinalList(sortedMode, currentCurrencyList))
         }
-    }
 
     private fun findOutFinalList(
         sortedMode: DataMode,
-        liveDataType: LiveData<List<Currency>>
-    ): List<Currency>? =
+        currentList: MutableList<Currency>
+    ): List<Currency> =
         when (sortedMode) {
-            DataMode.MODE_DEFAULT -> liveDataType.value
-            DataMode.MODE_SORTED_BY_VALUE -> liveDataType.value?.sortedBy { it.value }
-            DataMode.MODE_SORTED_BY_VALUE_VV -> liveDataType.value?.sortedByDescending { it.value }
-            DataMode.MODE_SORTED_BY_NAME -> liveDataType.value?.sortedBy { it.name }
-            DataMode.MODE_SORTED_BY_NAME_VV -> liveDataType.value?.sortedByDescending { it.name }
+            DataMode.MODE_DEFAULT -> currentList
+            DataMode.MODE_SORTED_BY_VALUE -> currentList.sortedBy { it.value }
+            DataMode.MODE_SORTED_BY_VALUE_VV -> currentList.sortedByDescending { it.value }
+            DataMode.MODE_SORTED_BY_NAME -> currentList.sortedBy { it.name }
+            DataMode.MODE_SORTED_BY_NAME_VV -> currentList.sortedByDescending { it.name }
         }
 
     fun insertFavourite(currency: Currency): Completable =
@@ -95,18 +95,18 @@ class SharedViewModel @Inject constructor(
     fun setSearch(text: String, isFavouriteMode: Boolean) =
         when (isFavouriteMode) {
             true -> {
-                val finalList = favouriteCurrencyList.value?.filter {
+                val finalList = favouriteCurrencyList.filter {
                     it.name.uppercase(Locale.getDefault())
                         .contains(text.uppercase(Locale.getDefault()))
                 }
-                favouriteListToView.postValue(finalList ?: listOf())
+                favouriteListToView.onNext(finalList)
             }
             false -> {
-                val finalList = currencyListFromRoom.value?.filter {
+                val finalList = currentCurrencyList.filter {
                     it.name.uppercase(Locale.getDefault())
                         .contains(text.uppercase(Locale.getDefault()))
                 }
-                sortedListToView.postValue(finalList ?: listOf())
+                sortedListToView.onNext(finalList)
             }
         }
 }
