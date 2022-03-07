@@ -11,5 +11,6 @@ data class Currency(
 )
 
 data class FavouriteCurrency(
-    val name: String
+    val name: String,
+    val value: Double
 )

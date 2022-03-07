@@ -45,18 +45,23 @@ android {
 
 dependencies {
 
+    implementation project(path: ':currencySymbols')
+
     implementation 'androidx.core:core-ktx:1.7.0'
     implementation 'androidx.appcompat:appcompat:1.4.1'
-    implementation 'androidx.navigation:navigation-fragment-ktx:2.4.1'
-    implementation 'androidx.navigation:navigation-ui-ktx:2.4.1'
     implementation 'com.google.android.material:material:1.5.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.3'
-    implementation 'androidx.databinding:databinding-runtime:7.1.2'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'androidx.room:room-ktx:2.4.2'
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+
+    //Data binding
+    implementation "androidx.databinding:databinding-runtime:$version_data_binding"
+
+    //Navigation
+    implementation "androidx.navigation:navigation-fragment-ktx:$version_navigation"
+    implementation "androidx.navigation:navigation-ui-ktx:$version_navigation"
 
     //Dagger 2
     implementation "com.google.dagger:dagger:$version_dagger"
@@ -66,21 +71,21 @@ dependencies {
     implementation "com.squareup.retrofit2:retrofit:$version_retrofit"
     implementation "com.squareup.retrofit2:converter-gson:$version_retrofit"
     implementation "com.squareup.retrofit2:converter-moshi:$version_retrofit"
-    implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
-    implementation 'io.reactivex.rxjava2:rxjava:2.2.19'
+    implementation "io.reactivex.rxjava2:rxandroid:$version_rx_android"
+    implementation "io.reactivex.rxjava2:rxjava:$version_rx_java"
     implementation "com.squareup.retrofit2:adapter-rxjava:$version_rx_retrofit"
     implementation "com.jakewharton.retrofit:retrofit2-rxjava2-adapter:$varsion_rx_ret_adapter"
-    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation "com.google.code.gson:gson:$version_gson"
 
     //Moshi
     implementation "com.squareup.moshi:moshi:$version_moshi"
     implementation "com.squareup.moshi:moshi-kotlin:$version_moshi"
 
     // Extensions = ViewModel + LiveData
-    implementation "android.arch.lifecycle:extensions:1.1.1"
-    kapt "android.arch.lifecycle:compiler:1.1.1"
+    implementation "android.arch.lifecycle:extensions:$version_lifecycle"
 
     // Room
+    implementation "androidx.room:room-ktx:$version_room_ktx"
     implementation "androidx.room:room-runtime:$version_room"
     kapt "androidx.room:room-compiler:$version_room"
     implementation "androidx.room:room-ktx:$version_room"

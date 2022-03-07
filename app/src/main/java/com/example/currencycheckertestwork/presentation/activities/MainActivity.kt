@@ -8,6 +8,9 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.currencycheckertestwork.AppClass
 import com.example.currencycheckertestwork.R
 import com.example.currencycheckertestwork.di.MainComponent
+import com.example.currencycheckertestwork.util.setVisible
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.error_view.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -32,6 +35,11 @@ class MainActivity : AppCompatActivity() {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN
             )
         }
+    }
+
+    fun showBasePopup(message: String){
+        errorView.setVisible(true)
+        errorText.text = message
     }
 
 }

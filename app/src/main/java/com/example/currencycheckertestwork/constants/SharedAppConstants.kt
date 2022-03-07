@@ -7,3 +7,6 @@ enum class DataMode(val IntKey: Int) {
     MODE_SORTED_BY_NAME(3),
     MODE_SORTED_BY_NAME_VV(4),
 }
+
+const val RETROFIT_LOAD_ERROR = "error"
+const val HANDLER_DELAY = 1000L

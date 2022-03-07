@@ -28,7 +28,20 @@ fun CurrentCurrency.transformToDbModel(): DbCurrentCurrency =
 
 fun FavouriteCurrency.transformToDbModel(): DbFavouriteCurrency =
     DbFavouriteCurrency(
-        name = name
+        name = name,
+        value = value
+    )
+
+fun Currency.transformToFavouriteCurrency(): FavouriteCurrency =
+    FavouriteCurrency(
+        name = name,
+        value = value
+    )
+
+fun FavouriteCurrency.transformToCurrency(): Currency =
+    Currency(
+        name = name,
+        value = value
     )
 
 

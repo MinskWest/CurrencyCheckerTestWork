@@ -1,12 +1,15 @@
 package com.example.currencycheckertestwork.presentation
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
+import com.example.currencycheckertestwork.presentation.activities.MainActivity
 
 abstract class BaseFragment<DB : ViewDataBinding> : Fragment() {
 
@@ -33,8 +36,11 @@ abstract class BaseFragment<DB : ViewDataBinding> : Fragment() {
 
     open fun initObservers() {}
 
-    fun showSnackBar(message: String) {
-//        (requireActivity() as MainActivity).showSnackBar(message)
-    }
+    fun showBasePopup(message: String) = (requireActivity() as MainActivity).showBasePopup(message)
 
+    fun hideKeyboard() {
+        val inputMethodManager: InputMethodManager =
+            context?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager.hideSoftInputFromWindow(view?.windowToken, 0)
+    }
 }

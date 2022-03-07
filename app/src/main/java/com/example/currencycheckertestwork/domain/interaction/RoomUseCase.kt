@@ -25,7 +25,7 @@ class RoomUseCase @Inject constructor(
     fun deleteFavourite(name: String): Completable =
         commonRepository.deleteFavourite(name)
 
-    fun getAllFavourite(): LiveData<List<FavouriteCurrency>> =
+    fun getAllFavourite(): LiveData<List<Currency>> =
         commonRepository.getAllFavourite()
 
 }

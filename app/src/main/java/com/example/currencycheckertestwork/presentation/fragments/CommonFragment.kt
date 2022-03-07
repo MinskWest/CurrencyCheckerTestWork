@@ -1,12 +1,15 @@
 package com.example.currencycheckertestwork.presentation.fragments
 
-import android.view.View
+import android.os.Handler
+import android.os.Looper
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.currencycheckertestwork.AppClass
 import com.example.currencycheckertestwork.R
 import com.example.currencycheckertestwork.constants.DataMode
+import com.example.currencycheckertestwork.constants.DataMode.*
+import com.example.currencycheckertestwork.constants.HANDLER_DELAY
 import com.example.currencycheckertestwork.databinding.FragmentCommonBinding
 import com.example.currencycheckertestwork.di.MainComponent
 import com.example.currencycheckertestwork.di.ViewModelFactory
@@ -15,7 +18,9 @@ import com.example.currencycheckertestwork.presentation.BaseFragment
 import com.example.currencycheckertestwork.presentation.adapters.CommonRecyclerViewAdapter
 import com.example.currencycheckertestwork.presentation.adapters.CommonRecyclerViewAdapter.Companion.isDeleteAction
 import com.example.currencycheckertestwork.presentation.viewmodels.SharedViewModel
-import kotlinx.android.synthetic.main.fragment_common.*
+import com.example.currencycheckertestwork.util.onClick
+import com.example.currencycheckertestwork.util.setVisible
+import com.example.currencysymbols.CurrencySymbolsManager
 import kotlinx.android.synthetic.main.sorting_view.*
 import javax.inject.Inject
 
@@ -27,18 +32,27 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
     @Inject
     lateinit var viewModelFactory: ViewModelFactory
 
+    @Inject
+    lateinit var currencySymbolsManager: CurrencySymbolsManager
+
     private var popularCurrencyList = mutableListOf<Currency>()
     private var favouriteCurrencyList = mutableListOf<Currency>()
 
     private var isSortedMode = false
     private var isFavouriteMode = false
     private var isSearchMode = false
+    private var isDeleteInsertFavAction = false
+
+    private var mainHandler = Handler(Looper.getMainLooper())
+    private var reverseDelInsActionRunnable = Runnable { isDeleteInsertFavAction = false }
 
     private val viewModel by lazy {
         ViewModelProvider(this, viewModelFactory)[SharedViewModel::class.java]
     }
 
-    private val currencyAdapter by lazy { CommonRecyclerViewAdapter(::saveOrDeleteCurrency) }
+    private val currencyAdapter by lazy {
+        CommonRecyclerViewAdapter(currencySymbolsManager, ::saveOrDeleteCurrency)
+    }
 
     override fun getFragmentLayoutId(): Int = R.layout.fragment_common
 
@@ -56,33 +70,37 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
     }
 
     private fun setupViews() {
-        with(currencyRecyclerView) {
-            layoutManager = linearLayoutManager
-            adapter = currencyAdapter
-        }
+        with(binding) {
+            with(currencyRecyclerView) {
+                layoutManager = linearLayoutManager
+                adapter = currencyAdapter
+            }
 
-        popularBtn.setOnClickListener { navigateClickAction(popularCurrencyList, false) }
-        favouriteBtn.setOnClickListener { navigateClickAction(favouriteCurrencyList, true) }
+            popularBtn.onClick { navigateClickAction(popularCurrencyList, false) }
+            favouriteBtn.onClick { navigateClickAction(favouriteCurrencyList, true) }
 
-        sortButton.setOnClickListener {
-            when (isSortedMode) {
-                true -> {
-                    !isSortedMode
-                    sortView.visibility = View.INVISIBLE
-                }
-                false -> {
-                    !isSortedMode
-                    sortView.visibility = View.VISIBLE
+            sortButton.setOnClickListener {
+                hideKeyboard()
+                when (isSortedMode) {
+                    true -> {
+                        !isSortedMode
+                        sortView.setVisible(false)
+                    }
+                    false -> {
+                        !isSortedMode
+                        sortView.setVisible(true)
+                    }
                 }
             }
+
+            setUpSortClickListeners()
+
+            searchTv.addTextChangedListener(onTextChanged = { text, _, _, _ ->
+                isSearchMode = !text.isNullOrEmpty()
+                viewModel.setSearch(text.toString(), isFavouriteMode)
+
+            })
         }
-
-        setUpSortClickListeners()
-
-        searchTv.addTextChangedListener(onTextChanged = { text, _, _, _ ->
-            isSearchMode = !text.isNullOrEmpty()
-            viewModel.setSearch(text.toString(), isFavouriteMode)
-        })
     }
 
     private fun navigateClickAction(list: MutableList<Currency>, isFavouriteStateClick: Boolean) {
@@ -90,31 +108,43 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
         isDeleteAction = isFavouriteStateClick
         with(currencyAdapter) {
             submitList(list)
-            notifyDataSetChanged()
         }
-        currencyRecyclerView.scrollToPosition(0)
+        binding.currencyRecyclerView.scrollToPosition(0)
     }
 
     private fun setUpSortClickListeners() {
-        alphabet_increase.setOnClickListener { sortClickAction(DataMode.MODE_SORTED_BY_NAME) }
-        alphabet_decrease.setOnClickListener { sortClickAction(DataMode.MODE_SORTED_BY_NAME_VV) }
-        value_increase.setOnClickListener { sortClickAction(DataMode.MODE_SORTED_BY_VALUE) }
-        value_decrease.setOnClickListener { sortClickAction(DataMode.MODE_SORTED_BY_VALUE_VV) }
+        alphabet_increase.onClick { sortClickAction(MODE_SORTED_BY_NAME) }
+        alphabet_decrease.onClick { sortClickAction(MODE_SORTED_BY_NAME_VV) }
+        value_increase.onClick { sortClickAction(MODE_SORTED_BY_VALUE) }
+        value_decrease.onClick { sortClickAction(MODE_SORTED_BY_VALUE_VV) }
+        clickBackSortingLay.onClick { binding.sortView.setVisible(false) }
     }
 
     private fun sortClickAction(mode: DataMode) {
-        sortView.visibility = View.INVISIBLE
+        binding.sortView.setVisible(false)
         viewModel.finalListToView(mode, isFavouriteMode)
     }
 
-    private fun saveOrDeleteCurrency(name: String) {
-        when (isFavouriteMode) {
-            true -> viewModel.deleteFavourite(name)
-            false -> viewModel.insertFavourite(name)
+    private fun saveOrDeleteCurrency(currency: Currency) {
+
+        isDeleteInsertFavAction = true
+        reverseDelInsAction()
+
+        with(viewModel) {
+            when (isFavouriteMode) {
+                true -> deleteFavourite(currency.name).subscribe()
+                false -> insertFavourite(currency).subscribe()
+            }
+            loadData()
         }
-        viewModel.loadData()
     }
 
+    private fun reverseDelInsAction() =
+        //reverse to false after 1s by messageQueue
+        with(mainHandler) {
+            removeCallbacks { reverseDelInsActionRunnable }
+            postDelayed(reverseDelInsActionRunnable, HANDLER_DELAY)
+        }
 
     override fun initObservers() {
         super.initObservers()
@@ -122,26 +152,29 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
         corkCall()
 
         viewModel.favouriteListToView.observe(viewLifecycleOwner, { state ->
-            with(favouriteCurrencyList) {
-                clear()
-                addAll(state)
-            }
-            updateRecycler()
+            observeListActon(favouriteCurrencyList, state ?: listOf())
         })
         viewModel.sortedListToView.observe(viewLifecycleOwner, { state ->
-            with(popularCurrencyList) {
-                clear()
-                addAll(state)
-            }
-            updateRecycler()
-            if (!isFavouriteMode) currencyAdapter.submitList(state)
+            observeListActon(popularCurrencyList, state ?: listOf())
+        })
+        viewModel.errorListener.observe(viewLifecycleOwner, { state ->
+            if (state == true) showBasePopup(requireContext().resources.getString(R.string.base_error))
         })
     }
 
-    private fun corkCall() {
-        viewModel.currencyListFromRoom.observe(viewLifecycleOwner, {})
-        viewModel.favouriteCurrencyList.observe(viewLifecycleOwner, {})
+    private fun observeListActon(list: MutableList<Currency>, stateList: List<Currency>) {
+        with(list) {
+            clear()
+            addAll(stateList)
+        }
+        updateRecycler()
     }
+
+    private fun corkCall() =
+        with(viewModel) {
+            currencyListFromRoom.observe(viewLifecycleOwner, {})
+            favouriteCurrencyList.observe(viewLifecycleOwner, {})
+        }
 
     private fun updateRecycler() {
         when (isFavouriteMode) {
@@ -152,10 +185,9 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
 
     private fun updateAction(newList: MutableList<Currency>) {
         with(currencyAdapter) {
-            submitList(listOf<Currency>())
             submitList(newList)
             notifyDataSetChanged()
         }
-        currencyRecyclerView.scrollToPosition(0)
+        if (!isDeleteInsertFavAction) binding.currencyRecyclerView.scrollToPosition(0)
     }
 }

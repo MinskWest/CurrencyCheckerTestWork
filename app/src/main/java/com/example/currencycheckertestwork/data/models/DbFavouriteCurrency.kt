@@ -7,6 +7,8 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "favourite_items")
 data class DbFavouriteCurrency(
     @PrimaryKey
-    @ColumnInfo(name ="currencyName")
-    val name: String
+    @ColumnInfo(name ="favCurrencyName")
+    val name: String,
+    @ColumnInfo(name ="favCurrencyValue")
+    val value: Double
 )

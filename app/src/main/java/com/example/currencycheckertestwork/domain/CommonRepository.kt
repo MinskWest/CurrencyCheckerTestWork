@@ -19,6 +19,6 @@ interface CommonRepository {
 
     fun deleteFavourite(name: String): Completable
 
-    fun getAllFavourite(): LiveData<List<FavouriteCurrency>>
+    fun getAllFavourite(): LiveData<List<Currency>>
 
 }

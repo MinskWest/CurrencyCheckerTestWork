@@ -8,3 +8,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "CurrencyCheckerTestWork"
 include ':app'
+include ':currencySymbols'

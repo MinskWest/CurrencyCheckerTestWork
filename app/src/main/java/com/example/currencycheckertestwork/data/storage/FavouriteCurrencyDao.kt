@@ -14,7 +14,7 @@ interface FavouriteCurrencyDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertFavouriteCurrency(dbFavouriteCurrency: DbFavouriteCurrency): Completable
 
-    @Query("DELETE FROM favourite_items WHERE currencyName=:name")
+    @Query("DELETE FROM favourite_items WHERE favCurrencyName=:name")
     fun deleteFavouriteCurrency(name: String): Completable
 
     @Query("SELECT * FROM favourite_items")

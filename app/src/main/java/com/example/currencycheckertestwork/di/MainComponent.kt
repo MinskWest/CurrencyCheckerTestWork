@@ -7,7 +7,10 @@ import dagger.BindsInstance
 import dagger.Component
 
 @ApplicationScope
-@Component(modules = [UseCasesModule::class, NetworkModule::class, ViewModelModule::class, RepositoryModule::class])
+@Component(
+    modules = [UseCasesModule::class, NetworkModule::class, ViewModelModule::class,
+        RepositoryModule::class, CurrencySymbolsModule::class]
+)
 interface MainComponent {
 
     fun inject(activity: MainActivity)
@@ -15,7 +18,7 @@ interface MainComponent {
     fun inject(commonFragment: CommonFragment)
 
     @Component.Factory
-    interface ApplicationComponentFactory{
+    interface ApplicationComponentFactory {
         fun create(
             @BindsInstance context: Context,
         ): MainComponent

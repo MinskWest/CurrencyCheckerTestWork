@@ -6,12 +6,16 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.room.Room
 import com.example.currencycheckertestwork.BuildConfig
-import com.example.currencycheckertestwork.data.api.ApiRetrofitService
 import com.example.currencycheckertestwork.data.CommonRepositoryImpl
+import com.example.currencycheckertestwork.data.SchedulerProviderImpl
+import com.example.currencycheckertestwork.data.api.ApiRetrofitService
 import com.example.currencycheckertestwork.data.storage.AppDatabase
 import com.example.currencycheckertestwork.domain.interaction.GetCurrencyDataUseCase
 import com.example.currencycheckertestwork.domain.interaction.RoomUseCase
+import com.example.currencycheckertestwork.domain.scheduler.SchedulerProvider
 import com.example.currencycheckertestwork.presentation.viewmodels.SharedViewModel
+import com.example.currencysymbols.CurrencySymbolsManager
+import com.example.currencysymbols.CurrencySymbolsManagerImpl
 import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -26,7 +30,7 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Provider
-import javax.inject.Singleton
+
 
 @Module
 class UseCasesModule() {
@@ -111,20 +115,35 @@ class RepositoryModule {
     @Provides
     @ApplicationScope
     fun provideAppDatabase(context: Context): AppDatabase {
-        return Room.databaseBuilder(context, AppDatabase::class.java, DATABASE_NAME).build()
+        return Room.databaseBuilder(context, AppDatabase::class.java, DATABASE_NAME)
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides
     fun provideCommonRepository(
         apiRetrofitService: ApiRetrofitService,
+        schedulerProvider: SchedulerProvider,
         appDatabase: AppDatabase
     ): CommonRepositoryImpl {
-        return CommonRepositoryImpl(apiRetrofitService, appDatabase)
+        return CommonRepositoryImpl(apiRetrofitService, schedulerProvider, appDatabase)
     }
 
     @Provides
     fun provideLinearLayoutManager(context: Context): LinearLayoutManager {
         return LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
     }
+
+    @Provides
+    fun provideSchedulerProvider(): SchedulerProvider = SchedulerProviderImpl()
+
+}
+
+@Module
+class CurrencySymbolsModule {
+
+    @Provides
+    fun provideCurrencySymbolsManager(context: Context): CurrencySymbolsManager =
+        CurrencySymbolsManagerImpl(context)
 
 }

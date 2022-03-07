@@ -3,7 +3,7 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="sort">sort</string>
-    <string name="search">search...</string>
+    <string name="search">search…</string>
     <string name="popular">Popular</string>
     <string name="favourite">Favourite</string>
     <string name="sortBig">Sort</string>
@@ -11,4 +11,5 @@
     <string name="alphabet_decrease">alphabet decrease</string>
     <string name="value_increase">value increase</string>
     <string name="value_decrease">value decrease</string>
+    <string name="base_error">Error\ntry later</string>
 </resources>

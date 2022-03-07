@@ -9,5 +9,5 @@ class GetCurrencyDataUseCase @Inject constructor(
     private val commonRepository: CommonRepository
 ) {
 
-    fun loadData(): Single<CurrentCurrencyDTO> = commonRepository.loadDataByRetrofit().doOnError {  }
+    fun loadData(): Single<CurrentCurrencyDTO> = commonRepository.loadDataByRetrofit()
 }
