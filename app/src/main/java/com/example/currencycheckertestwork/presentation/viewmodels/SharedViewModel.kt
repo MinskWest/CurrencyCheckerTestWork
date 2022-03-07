@@ -2,18 +2,18 @@ package com.example.currencycheckertestwork.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import com.example.currencycheckertestwork.constants.DataMode
-import com.example.currencycheckertestwork.constants.RETROFIT_LOAD_ERROR
-import com.example.currencycheckertestwork.data.CurrentCurrencyDTO
 import com.example.currencycheckertestwork.data.asDomainModel
 import com.example.currencycheckertestwork.data.transformToDbModel
 import com.example.currencycheckertestwork.data.transformToFavouriteCurrency
 import com.example.currencycheckertestwork.domain.Currency
 import com.example.currencycheckertestwork.domain.interaction.GetCurrencyDataUseCase
 import com.example.currencycheckertestwork.domain.interaction.RoomUseCase
-import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
+import java.io.IOException
 import java.util.*
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import javax.inject.Inject
 
 class SharedViewModel @Inject constructor(
@@ -30,44 +30,55 @@ class SharedViewModel @Inject constructor(
 
     val currentCurrency: Observable<Unit> = roomUseCase.getFullList()
         .map {
-            currentCurrencyList.clear()
-            currentCurrencyList.addAll(it)
+            updateList(currentCurrencyList, it)
             sortedListToView.onNext(it)
         }
     val favouriteCurrency: Observable<Unit> = roomUseCase.getAllFavourite()
         .map {
-            favouriteCurrencyList.clear()
-            favouriteCurrencyList.addAll(it)
+            updateList(favouriteCurrencyList, it)
             favouriteListToView.onNext(it)
         }
 
+    private val commonExecutor = Executors.newSingleThreadExecutor()
+    private val cycledExecutor = Executors.newSingleThreadScheduledExecutor()
+
     fun loadData() {
-        getCurrencyDataUseCase.loadData()
-            .doOnSuccess { currentCurrencyDTO ->
-                loadCurrent(currentCurrencyDTO)
+
+        //load data from server
+        commonExecutor.submit {
+            try {
+                val response = getCurrencyDataUseCase.loadData().execute()
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body != null) {
+                        val list = response.body()!!.asDomainModel().value
+                        sortedListToView.onNext(list)
+                        roomUseCase.saveInRoom(
+                            response.body()!!.asDomainModel().transformToDbModel()
+                        )
+                    }
+                }
+            } catch (e: IOException) {
+                errorListener.onNext(true)
             }
-            .subscribe()
+        }
+
+//        for cycled updating favourites use -
+//        cycledExecutor.scheduleAtFixedRate(
+//            Runnable {
+//                //cycle favourite update here
+//                //for send to main thread - handler / runOnUiThread{}
+//            }, 0, 0.1.toLong(), TimeUnit.SECONDS
+//        )
+
     }
 
-    private fun loadCurrent(currentCurrencyDTO: CurrentCurrencyDTO) {
-        if (currentCurrencyDTO.loadValue.containsKey(RETROFIT_LOAD_ERROR)) {
-            val currentList = listOf<Currency>()
-            if (currentList.isEmpty()) {
-                // can't load and haven't saved value - view no internet popup
-                errorListener.onNext(true)
-            } else {
-                // view saved version
-                sortedListToView.onNext(currentList)
-            }
-        } else {
-            //update data in room
-            roomUseCase.saveInRoom(currentCurrencyDTO.asDomainModel().transformToDbModel())
-                .doOnComplete {
-                    sortedListToView.onNext(currentCurrencyDTO.asDomainModel().value)
-                }
-                .subscribe()
+    private fun updateList(list: MutableList<Currency>, newValue: List<Currency>) =
+        with(list) {
+            clear()
+            addAll(newValue)
         }
-    }
+
 
     fun finalListToView(sortedMode: DataMode, isFavourite: Boolean) =
         when (isFavourite) {
@@ -87,10 +98,12 @@ class SharedViewModel @Inject constructor(
             DataMode.MODE_SORTED_BY_NAME_VV -> currentList.sortedByDescending { it.name }
         }
 
-    fun insertFavourite(currency: Currency): Completable =
+    fun insertFavourite(currency: Currency): Future<*> = commonExecutor.submit {
         roomUseCase.saveFavourite(currency.transformToFavouriteCurrency().transformToDbModel())
+    }
 
-    fun deleteFavourite(name: String): Completable = roomUseCase.deleteFavourite(name)
+    fun deleteFavourite(name: String): Future<*> =
+        commonExecutor.submit { roomUseCase.deleteFavourite(name) }
 
     fun setSearch(text: String, isFavouriteMode: Boolean) =
         when (isFavouriteMode) {

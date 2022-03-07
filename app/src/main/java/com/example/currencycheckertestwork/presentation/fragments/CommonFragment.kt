@@ -140,8 +140,8 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
 
         with(viewModel) {
             when (isFavouriteMode) {
-                true -> deleteFavourite(currency.name).subscribe()
-                false -> insertFavourite(currency).subscribe()
+                true -> deleteFavourite(currency.name)
+                false -> insertFavourite(currency)
             }
             loadData()
         }
