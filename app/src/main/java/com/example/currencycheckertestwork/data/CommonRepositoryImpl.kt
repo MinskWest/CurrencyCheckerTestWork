@@ -1,7 +1,5 @@
 package com.example.currencycheckertestwork.data
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.Transformations
 import com.example.currencycheckertestwork.constants.RETROFIT_LOAD_ERROR
 import com.example.currencycheckertestwork.data.api.ApiRetrofitService
 import com.example.currencycheckertestwork.data.models.DbCurrentCurrency
@@ -13,6 +11,7 @@ import com.example.currencycheckertestwork.domain.Currency
 import com.example.currencycheckertestwork.domain.FavouriteCurrency
 import com.example.currencycheckertestwork.domain.scheduler.SchedulerProvider
 import io.reactivex.Completable
+import io.reactivex.Observable
 import io.reactivex.Single
 import javax.inject.Inject
 
@@ -35,10 +34,13 @@ class CommonRepositoryImpl @Inject constructor(
             .observeOn(schedulerProvider.io())
             .subscribeOn(schedulerProvider.io())
 
-    override fun getFullDataFromRoom(): LiveData<List<Currency>> =
-        Transformations.map(
-            appDatabase.currencyDao().getSavedCurrencyList()
-        ) { it?.savedValue ?: emptyList() }
+    override fun getFullDataFromRoom(): Observable<List<Currency>> =
+        appDatabase.currencyDao()
+            .getSavedCurrencyList()
+            .observeOn(schedulerProvider.io())
+            .subscribeOn(schedulerProvider.io())
+            .map { it.savedValue }
+            .toObservable()
 
     override fun saveFavourite(dbFavouriteCurrency: DbFavouriteCurrency): Completable =
         appDatabase.favouriteCurrencyDao()
@@ -52,14 +54,17 @@ class CommonRepositoryImpl @Inject constructor(
             .observeOn(schedulerProvider.io())
             .subscribeOn(schedulerProvider.io())
 
-    override fun getAllFavourite(): LiveData<List<Currency>> =
-        Transformations.map(
-            appDatabase.favouriteCurrencyDao().getFavouriteCurrencyList()
-        ) { favouriteList ->
-            val finalList = mutableListOf<Currency>()
-            for (i in favouriteList) {
-                finalList.add(FavouriteCurrency(i.name, i.value).transformToCurrency())
+    override fun getAllFavourite(): Observable<List<Currency>> =
+        appDatabase.favouriteCurrencyDao()
+            .getFavouriteCurrencyList()
+            .observeOn(schedulerProvider.io())
+            .subscribeOn(schedulerProvider.io())
+            .map {
+                val finalList = mutableListOf<Currency>()
+                for (i in it) {
+                    finalList.add(FavouriteCurrency(i.name, i.value).transformToCurrency())
+                }
+                finalList.toList()
             }
-            finalList
-        }
+            .toObservable()
 }
