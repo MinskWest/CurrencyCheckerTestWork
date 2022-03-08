@@ -1,24 +1,19 @@
 package com.example.currencycheckertestwork.domain
 
-import androidx.lifecycle.LiveData
 import com.example.currencycheckertestwork.data.CurrentCurrencyDTO
-import com.example.currencycheckertestwork.data.models.DbCurrentCurrency
 import com.example.currencycheckertestwork.data.models.DbFavouriteCurrency
-import io.reactivex.Completable
-import io.reactivex.Single
+import kotlinx.coroutines.flow.Flow
 
 interface CommonRepository {
 
-    fun loadDataByRetrofit(): Single<CurrentCurrencyDTO>
+    suspend fun loadDataByRetrofit(): Flow<Result<CurrentCurrencyDTO>>
 
-    fun saveDataInRoom(dbCurrentCurrency: DbCurrentCurrency): Completable
+    suspend fun getFullDataFromRoom(): Flow<List<Currency>>
 
-    fun getFullDataFromRoom(): LiveData<List<Currency>>
+    suspend fun saveFavourite(dbFavouriteCurrency: DbFavouriteCurrency)
 
-    fun saveFavourite(dbFavouriteCurrency: DbFavouriteCurrency): Completable
+    suspend fun deleteFavourite(name: String)
 
-    fun deleteFavourite(name: String): Completable
-
-    fun getAllFavourite(): LiveData<List<Currency>>
+    suspend fun getAllFavourite(): Flow<List<Currency>>
 
 }

@@ -83,6 +83,7 @@ dependencies {
 
     // Extensions = ViewModel + LiveData
     implementation "android.arch.lifecycle:extensions:$version_lifecycle"
+    implementation "androidx.lifecycle:lifecycle-livedata-ktx:$version_for_flow"
 
     // Room
     implementation "androidx.room:room-ktx:$version_room_ktx"

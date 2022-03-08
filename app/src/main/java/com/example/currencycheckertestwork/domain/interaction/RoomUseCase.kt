@@ -1,31 +1,20 @@
 package com.example.currencycheckertestwork.domain.interaction
 
-import androidx.lifecycle.LiveData
-import com.example.currencycheckertestwork.data.models.DbCurrentCurrency
 import com.example.currencycheckertestwork.data.models.DbFavouriteCurrency
 import com.example.currencycheckertestwork.domain.CommonRepository
 import com.example.currencycheckertestwork.domain.Currency
-import com.example.currencycheckertestwork.domain.FavouriteCurrency
-import io.reactivex.Completable
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class RoomUseCase @Inject constructor(
     private val commonRepository: CommonRepository
 ) {
+    suspend fun getFullList(): Flow<List<Currency>> = commonRepository.getFullDataFromRoom()
 
-    fun saveInRoom(dbCurrentCurrency: DbCurrentCurrency): Completable =
-        commonRepository.saveDataInRoom(dbCurrentCurrency)
-
-    fun getFullList(): LiveData<List<Currency>> =
-        commonRepository.getFullDataFromRoom()
-
-    fun saveFavourite(dbFavouriteCurrency: DbFavouriteCurrency): Completable =
+    suspend fun saveFavourite(dbFavouriteCurrency: DbFavouriteCurrency) =
         commonRepository.saveFavourite(dbFavouriteCurrency)
 
-    fun deleteFavourite(name: String): Completable =
-        commonRepository.deleteFavourite(name)
+    suspend fun deleteFavourite(name: String) = commonRepository.deleteFavourite(name)
 
-    fun getAllFavourite(): LiveData<List<Currency>> =
-        commonRepository.getAllFavourite()
-
+    suspend fun getAllFavourite(): Flow<List<Currency>> = commonRepository.getAllFavourite()
 }

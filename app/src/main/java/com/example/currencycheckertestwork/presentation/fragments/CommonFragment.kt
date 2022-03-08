@@ -4,6 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.currencycheckertestwork.AppClass
 import com.example.currencycheckertestwork.R
@@ -22,6 +23,8 @@ import com.example.currencycheckertestwork.util.onClick
 import com.example.currencycheckertestwork.util.setVisible
 import com.example.currencysymbols.CurrencySymbolsManager
 import kotlinx.android.synthetic.main.sorting_view.*
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
 
 class CommonFragment : BaseFragment<FragmentCommonBinding>() {
@@ -132,8 +135,8 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
 
         with(viewModel) {
             when (isFavouriteMode) {
-                true -> deleteFavourite(currency.name).subscribe()
-                false -> insertFavourite(currency).subscribe()
+                true -> deleteFavourite(currency.name)
+                false -> insertFavourite(currency)
             }
             loadData()
         }
@@ -149,17 +152,22 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
     override fun initObservers() {
         super.initObservers()
 
-        corkCall()
+        with(viewModel) {
+            favouriteListToView
+                .onEach { state ->
+                    observeListActon(favouriteCurrencyList, state)
+                }.launchIn(lifecycleScope)
 
-        viewModel.favouriteListToView.observe(viewLifecycleOwner, { state ->
-            observeListActon(favouriteCurrencyList, state ?: listOf())
-        })
-        viewModel.sortedListToView.observe(viewLifecycleOwner, { state ->
-            observeListActon(popularCurrencyList, state ?: listOf())
-        })
-        viewModel.errorListener.observe(viewLifecycleOwner, { state ->
-            if (state == true) showBasePopup(requireContext().resources.getString(R.string.base_error))
-        })
+            sortedListToView
+                .onEach { state ->
+                    observeListActon(popularCurrencyList, state)
+                }.launchIn(lifecycleScope)
+
+            errorListener
+                .onEach { state ->
+                    if (state) showBasePopup(requireContext().resources.getString(R.string.base_error))
+                }.launchIn(lifecycleScope)
+        }
     }
 
     private fun observeListActon(list: MutableList<Currency>, stateList: List<Currency>) {
@@ -169,12 +177,6 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
         }
         updateRecycler()
     }
-
-    private fun corkCall() =
-        with(viewModel) {
-            currencyListFromRoom.observe(viewLifecycleOwner, {})
-            favouriteCurrencyList.observe(viewLifecycleOwner, {})
-        }
 
     private fun updateRecycler() {
         when (isFavouriteMode) {

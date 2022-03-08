@@ -123,10 +123,9 @@ class RepositoryModule {
     @Provides
     fun provideCommonRepository(
         apiRetrofitService: ApiRetrofitService,
-        schedulerProvider: SchedulerProvider,
         appDatabase: AppDatabase
     ): CommonRepositoryImpl {
-        return CommonRepositoryImpl(apiRetrofitService, schedulerProvider, appDatabase)
+        return CommonRepositoryImpl(apiRetrofitService, appDatabase)
     }
 
     @Provides

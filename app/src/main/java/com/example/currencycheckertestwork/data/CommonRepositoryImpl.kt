@@ -1,8 +1,5 @@
 package com.example.currencycheckertestwork.data
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.Transformations
-import com.example.currencycheckertestwork.constants.RETROFIT_LOAD_ERROR
 import com.example.currencycheckertestwork.data.api.ApiRetrofitService
 import com.example.currencycheckertestwork.data.models.DbCurrentCurrency
 import com.example.currencycheckertestwork.data.models.DbFavouriteCurrency
@@ -11,55 +8,85 @@ import com.example.currencycheckertestwork.di.ApplicationScope
 import com.example.currencycheckertestwork.domain.CommonRepository
 import com.example.currencycheckertestwork.domain.Currency
 import com.example.currencycheckertestwork.domain.FavouriteCurrency
-import com.example.currencycheckertestwork.domain.scheduler.SchedulerProvider
-import io.reactivex.Completable
-import io.reactivex.Single
+import com.example.currencycheckertestwork.domain.Result
+import com.example.currencycheckertestwork.util.api.ErrorUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import retrofit2.Response
+import retrofit2.Retrofit
 import javax.inject.Inject
 
 @ApplicationScope
 class CommonRepositoryImpl @Inject constructor(
     private val apiRetrofitService: ApiRetrofitService,
-    private val schedulerProvider: SchedulerProvider,
     private val appDatabase: AppDatabase
 ) : CommonRepository {
 
-    override fun loadDataByRetrofit(): Single<CurrentCurrencyDTO> =
-        apiRetrofitService.getAllCurrencyList()
-            .onErrorReturnItem(CurrentCurrencyDTO(mapOf(Pair(RETROFIT_LOAD_ERROR, 0.0))))
-            .observeOn(schedulerProvider.io())
-            .subscribeOn(schedulerProvider.io())
-
-    override fun saveDataInRoom(dbCurrentCurrency: DbCurrentCurrency): Completable =
-        appDatabase.currencyDao()
-            .insertCurrencyList(dbCurrentCurrency)
-            .observeOn(schedulerProvider.io())
-            .subscribeOn(schedulerProvider.io())
-
-    override fun getFullDataFromRoom(): LiveData<List<Currency>> =
-        Transformations.map(
-            appDatabase.currencyDao().getSavedCurrencyList()
-        ) { it?.savedValue ?: emptyList() }
-
-    override fun saveFavourite(dbFavouriteCurrency: DbFavouriteCurrency): Completable =
-        appDatabase.favouriteCurrencyDao()
-            .insertFavouriteCurrency(dbFavouriteCurrency)
-            .observeOn(schedulerProvider.io())
-            .subscribeOn(schedulerProvider.io())
-
-    override fun deleteFavourite(name: String): Completable =
-        appDatabase.favouriteCurrencyDao()
-            .deleteFavouriteCurrency(name)
-            .observeOn(schedulerProvider.io())
-            .subscribeOn(schedulerProvider.io())
-
-    override fun getAllFavourite(): LiveData<List<Currency>> =
-        Transformations.map(
-            appDatabase.favouriteCurrencyDao().getFavouriteCurrencyList()
-        ) { favouriteList ->
-            val finalList = mutableListOf<Currency>()
-            for (i in favouriteList) {
-                finalList.add(FavouriteCurrency(i.name, i.value).transformToCurrency())
+    override suspend fun loadDataByRetrofit(): Flow<Result<CurrentCurrencyDTO>> =
+        flow {
+            //set loading status
+            emit(Result.loading())
+            //get response
+            val result = loadCurrencyApiAction()
+            if (result.status == Result.Status.SUCCESS) {
+                result.data?.asDomainModel()?.let { it ->
+                    //Cache in room if successful
+                    saveDataInRoom(it.transformToDbModel())
+                }
             }
-            finalList
+            emit(result)
+        }.flowOn(Dispatchers.IO)
+
+    private suspend fun loadCurrencyApiAction(): Result<CurrentCurrencyDTO> =
+        getResponse(
+            request = { apiRetrofitService.getAllCurrencyList() },
+            defaultErrorMessage = "Error load currency data from server"
+        )
+
+    private suspend fun saveDataInRoom(dbCurrentCurrency: DbCurrentCurrency) =
+        appDatabase.currencyDao().insertCurrencyList(dbCurrentCurrency)
+
+    override suspend fun getFullDataFromRoom(): Flow<List<Currency>> =
+        appDatabase.currencyDao()
+            .getSavedCurrencyList()
+            .map {
+                it?.savedValue ?: listOf()
+            }.flowOn(Dispatchers.IO)
+
+    override suspend fun saveFavourite(dbFavouriteCurrency: DbFavouriteCurrency): Unit =
+        appDatabase.favouriteCurrencyDao().insertFavouriteCurrency(dbFavouriteCurrency)
+
+    override suspend fun deleteFavourite(name: String) =
+        appDatabase.favouriteCurrencyDao().deleteFavouriteCurrency(name)
+
+    override suspend fun getAllFavourite(): Flow<List<Currency>> =
+        appDatabase.favouriteCurrencyDao()
+            .getFavouriteCurrencyList()
+            .map { favouriteList ->
+                val finalList = mutableListOf<Currency>()
+                for (i in favouriteList ?: listOf()) {
+                    finalList.add(FavouriteCurrency(i.name, i.value).transformToCurrency())
+                }
+                finalList
+            }.flowOn(Dispatchers.IO)
+
+    private suspend fun <T> getResponse(
+        request: suspend () -> Response<T>,
+        defaultErrorMessage: String
+    ): Result<T> {
+        return try {
+            val result = request.invoke()
+            if (result.isSuccessful) {
+                return Result.success(result.body())
+            } else {
+                val errorResponse = ErrorUtils.parseError(result, Retrofit.Builder().build())
+                Result.error(errorResponse?.status_message ?: defaultErrorMessage, errorResponse)
+            }
+        } catch (e: Throwable) {
+            Result.error("Unknown Error", null)
         }
+    }
 }

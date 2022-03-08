@@ -19,6 +19,7 @@ buildscript {
         version_room           = "2.4.2"
         version_rx_room        = "1.1.1"
         version_lifecycle      = "1.1.1"
+        version_for_flow       = "2.4.1"
         version_gson           = "2.8.6"
         version_rx_java        = "2.2.19"
         version_rx_android     = "2.1.1"
