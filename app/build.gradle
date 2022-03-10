@@ -63,18 +63,14 @@ dependencies {
     implementation "androidx.navigation:navigation-fragment-ktx:$version_navigation"
     implementation "androidx.navigation:navigation-ui-ktx:$version_navigation"
 
-    //Dagger 2
-    implementation "com.google.dagger:dagger:$version_dagger"
-    kapt "com.google.dagger:dagger-compiler:$version_dagger"
+    //Koin
+    implementation "io.insert-koin:koin-android:$version_koin"
+    implementation "io.insert-koin:koin-core:$version_koin"
 
     //RxJava and Retrofit
     implementation "com.squareup.retrofit2:retrofit:$version_retrofit"
     implementation "com.squareup.retrofit2:converter-gson:$version_retrofit"
     implementation "com.squareup.retrofit2:converter-moshi:$version_retrofit"
-    implementation "io.reactivex.rxjava2:rxandroid:$version_rx_android"
-    implementation "io.reactivex.rxjava2:rxjava:$version_rx_java"
-    implementation "com.squareup.retrofit2:adapter-rxjava:$version_rx_retrofit"
-    implementation "com.jakewharton.retrofit:retrofit2-rxjava2-adapter:$varsion_rx_ret_adapter"
     implementation "com.google.code.gson:gson:$version_gson"
 
     //Moshi
@@ -90,6 +86,5 @@ dependencies {
     implementation "androidx.room:room-runtime:$version_room"
     kapt "androidx.room:room-compiler:$version_room"
     implementation "androidx.room:room-ktx:$version_room"
-    implementation "android.arch.persistence.room:rxjava2:$version_rx_room"
 
 }

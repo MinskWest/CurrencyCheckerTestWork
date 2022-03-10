@@ -3,17 +3,14 @@ package com.example.currencycheckertestwork.presentation.fragments
 import android.os.Handler
 import android.os.Looper
 import androidx.core.widget.addTextChangedListener
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.currencycheckertestwork.AppClass
 import com.example.currencycheckertestwork.R
 import com.example.currencycheckertestwork.constants.DataMode
 import com.example.currencycheckertestwork.constants.DataMode.*
 import com.example.currencycheckertestwork.constants.HANDLER_DELAY
+import com.example.currencycheckertestwork.constants.MAIN_LAY_MANAGER
 import com.example.currencycheckertestwork.databinding.FragmentCommonBinding
-import com.example.currencycheckertestwork.di.MainComponent
-import com.example.currencycheckertestwork.di.ViewModelFactory
 import com.example.currencycheckertestwork.domain.Currency
 import com.example.currencycheckertestwork.presentation.BaseFragment
 import com.example.currencycheckertestwork.presentation.adapters.CommonRecyclerViewAdapter
@@ -25,18 +22,14 @@ import com.example.currencysymbols.CurrencySymbolsManager
 import kotlinx.android.synthetic.main.sorting_view.*
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import javax.inject.Inject
+import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.core.qualifier.named
 
 class CommonFragment : BaseFragment<FragmentCommonBinding>() {
 
-    @Inject
-    lateinit var linearLayoutManager: LinearLayoutManager
-
-    @Inject
-    lateinit var viewModelFactory: ViewModelFactory
-
-    @Inject
-    lateinit var currencySymbolsManager: CurrencySymbolsManager
+    private val linearLayoutManager: LinearLayoutManager by inject(named(MAIN_LAY_MANAGER))
+    private val currencySymbolsManager: CurrencySymbolsManager by inject()
 
     private var popularCurrencyList = mutableListOf<Currency>()
     private var favouriteCurrencyList = mutableListOf<Currency>()
@@ -49,9 +42,7 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
     private var mainHandler = Handler(Looper.getMainLooper())
     private var reverseDelInsActionRunnable = Runnable { isDeleteInsertFavAction = false }
 
-    private val viewModel by lazy {
-        ViewModelProvider(this, viewModelFactory)[SharedViewModel::class.java]
-    }
+    private val viewModel: SharedViewModel by viewModel()
 
     private val currencyAdapter by lazy {
         CommonRecyclerViewAdapter(currencySymbolsManager, ::saveOrDeleteCurrency)
@@ -59,13 +50,8 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
 
     override fun getFragmentLayoutId(): Int = R.layout.fragment_common
 
-    private val component: MainComponent by lazy {
-        (requireActivity().application as AppClass).mainComponent
-    }
-
     override fun initView() {
         super.initView()
-        component.inject(this)
 
         viewModel.loadData()
 

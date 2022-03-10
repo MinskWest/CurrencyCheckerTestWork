@@ -1,15 +1,31 @@
 package com.example.currencycheckertestwork
 
 import android.app.Application
-import com.example.currencycheckertestwork.di.DaggerMainComponent
-import com.example.currencycheckertestwork.di.MainComponent
+import com.example.currencycheckertestwork.di.*
+import org.koin.android.ext.koin.androidContext
+import org.koin.android.ext.koin.androidLogger
+import org.koin.core.context.startKoin
+import org.koin.core.logger.Level
 
-class AppClass: Application() {
-
-    lateinit var mainComponent: MainComponent
+class AppClass : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        mainComponent = DaggerMainComponent.factory().create(this)
+
+        startKoin {
+            androidContext(this@AppClass)
+            modules(
+                listOf(
+                    useCasesModule,
+                    networkModule,
+                    viewModelModule,
+                    repositoryModule,
+                    currencySymbolModule
+                )
+            )
+            androidLogger(Level.DEBUG)
+        }
+
     }
+
 }

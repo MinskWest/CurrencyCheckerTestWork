@@ -16,9 +16,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.*
-import javax.inject.Inject
 
-class SharedViewModel @Inject constructor(
+class SharedViewModel(
     private val getCurrencyDataUseCase: GetCurrencyDataUseCase,
     private val roomUseCase: RoomUseCase
 ) : ViewModel() {

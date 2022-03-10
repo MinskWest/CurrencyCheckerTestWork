@@ -10,3 +10,6 @@ enum class DataMode(val IntKey: Int) {
 
 const val RETROFIT_LOAD_ERROR = "error"
 const val HANDLER_DELAY = 1000L
+const val TIMEOUT = 30 * 1000L
+const val DATABASE_NAME = "currency_database"
+const val MAIN_LAY_MANAGER = "main_linear_layout_manager"

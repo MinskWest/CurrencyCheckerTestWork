@@ -4,7 +4,6 @@ import com.example.currencycheckertestwork.data.api.ApiRetrofitService
 import com.example.currencycheckertestwork.data.models.DbCurrentCurrency
 import com.example.currencycheckertestwork.data.models.DbFavouriteCurrency
 import com.example.currencycheckertestwork.data.storage.AppDatabase
-import com.example.currencycheckertestwork.di.ApplicationScope
 import com.example.currencycheckertestwork.domain.CommonRepository
 import com.example.currencycheckertestwork.domain.Currency
 import com.example.currencycheckertestwork.domain.FavouriteCurrency
@@ -17,10 +16,8 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import retrofit2.Response
 import retrofit2.Retrofit
-import javax.inject.Inject
 
-@ApplicationScope
-class CommonRepositoryImpl @Inject constructor(
+class CommonRepositoryImpl(
     private val apiRetrofitService: ApiRetrofitService,
     private val appDatabase: AppDatabase
 ) : CommonRepository {
