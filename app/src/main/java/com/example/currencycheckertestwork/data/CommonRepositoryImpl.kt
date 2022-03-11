@@ -1,5 +1,7 @@
 package com.example.currencycheckertestwork.data
 
+import com.example.currencycheckertestwork.constants.ERROR_FROM_SERVER
+import com.example.currencycheckertestwork.constants.UNKNOWN_ERROR
 import com.example.currencycheckertestwork.data.api.ApiRetrofitService
 import com.example.currencycheckertestwork.data.models.DbCurrentCurrency
 import com.example.currencycheckertestwork.data.models.DbFavouriteCurrency
@@ -40,7 +42,7 @@ class CommonRepositoryImpl(
     private suspend fun loadCurrencyApiAction(): Result<CurrentCurrencyDTO> =
         getResponse(
             request = { apiRetrofitService.getAllCurrencyList() },
-            defaultErrorMessage = "Error load currency data from server"
+            defaultErrorMessage = ERROR_FROM_SERVER
         )
 
     private suspend fun saveDataInRoom(dbCurrentCurrency: DbCurrentCurrency) =
@@ -83,7 +85,7 @@ class CommonRepositoryImpl(
                 Result.error(errorResponse?.status_message ?: defaultErrorMessage, errorResponse)
             }
         } catch (e: Throwable) {
-            Result.error("Unknown Error", null)
+            Result.error(UNKNOWN_ERROR, null)
         }
     }
 }

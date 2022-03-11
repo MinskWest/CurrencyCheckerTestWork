@@ -67,7 +67,7 @@ dependencies {
     implementation "io.insert-koin:koin-android:$version_koin"
     implementation "io.insert-koin:koin-core:$version_koin"
 
-    //RxJava and Retrofit
+    //Retrofit
     implementation "com.squareup.retrofit2:retrofit:$version_retrofit"
     implementation "com.squareup.retrofit2:converter-gson:$version_retrofit"
     implementation "com.squareup.retrofit2:converter-moshi:$version_retrofit"

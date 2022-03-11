@@ -13,7 +13,7 @@ import com.example.currencycheckertestwork.presentation.activities.MainActivity
 
 abstract class BaseFragment<DB : ViewDataBinding> : Fragment() {
 
-    protected lateinit var binding: DB
+    protected var binding: DB? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -21,8 +21,8 @@ abstract class BaseFragment<DB : ViewDataBinding> : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         binding = DataBindingUtil.inflate(inflater, getFragmentLayoutId(), container, false)
-        binding.lifecycleOwner = viewLifecycleOwner
-        return binding.root
+        binding?.lifecycleOwner = viewLifecycleOwner
+        return binding?.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -42,5 +42,10 @@ abstract class BaseFragment<DB : ViewDataBinding> : Fragment() {
         val inputMethodManager: InputMethodManager =
             context?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         inputMethodManager.hideSoftInputFromWindow(view?.windowToken, 0)
+    }
+
+    override fun onDestroy() {
+        binding = null
+        super.onDestroy()
     }
 }

@@ -1,7 +1,7 @@
 package com.example.currencycheckertestwork.util
 
+import android.content.Context
 import android.view.View
-import android.widget.TextView
 
 fun View.show() {
     visibility = View.VISIBLE
@@ -15,4 +15,4 @@ fun View.setVisible(visible: Boolean) = if (visible) show() else hide()
 
 fun View.onClick(action: () -> Unit) = setOnClickListener { action() }
 
-fun View.findTV(id: Int) = findViewById<TextView>(id)
+fun Context.string(id: Int) = this.resources.getString(id)
