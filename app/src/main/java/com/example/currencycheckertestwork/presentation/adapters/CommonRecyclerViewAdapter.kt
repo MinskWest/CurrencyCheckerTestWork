@@ -1,27 +1,28 @@
 package com.example.currencycheckertestwork.presentation.adapters
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.currencycheckertestwork.R
+import com.example.currencycheckertestwork.databinding.RecyclerItemBinding
 import com.example.currencycheckertestwork.domain.Currency
-import com.example.currencycheckertestwork.util.findTV
+import com.example.currencycheckertestwork.util.string
 import com.example.currencysymbols.CurrencySymbolsManager
 
 class CommonRecyclerViewAdapter(
     private val currencySymbolsManager: CurrencySymbolsManager,
     private val clickCurrency: (currency: Currency) -> Unit
-) : ListAdapter<Currency, CommonRecyclerViewAdapter.ItemViewHolder>(DiffCallback()) {
+) : ListAdapter<Currency, CommonRecyclerViewAdapter.ItemViewHolder>(BasicDiffUtil()) {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
-        val layout = R.layout.recycler_item
-        val view = LayoutInflater.from(parent.context).inflate(layout, parent, false)
-        return ItemViewHolder(view)
-    }
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder =
+        ItemViewHolder(
+            RecyclerItemBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            )
+        )
 
     override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
         holder.bind(getItem(position))
@@ -31,37 +32,28 @@ class CommonRecyclerViewAdapter(
         var isDeleteAction = false
     }
 
-    inner class ItemViewHolder(item: View) : RecyclerView.ViewHolder(item) {
-
-        private val currencyName = item.findTV(R.id.currencyName)
-        private val currencyValue = item.findTV(R.id.currencyValue)
-        private val currencySymbol = item.findTV(R.id.currencySymbol)
-        private val addBtn = item.findViewById(R.id.addButton) as Button
+    inner class ItemViewHolder(private val itemBinding: RecyclerItemBinding) :
+        RecyclerView.ViewHolder(itemBinding.root) {
 
         fun bind(currency: Currency) {
+            with(itemBinding) {
+                val context = itemView.context
+                currencyName.text = currency.name
+                currencyValue.text = currency.value.toString()
+                val currentSymbol = currencySymbolsManager.getSymbol(currency.name)
+                if (currentSymbol != currency.name) {
+                    currencySymbol.text = currentSymbol
+                } else currencySymbol.text = ""
 
-            currencyName.text = currency.name
-            currencyValue.text = currency.value.toString()
-            val currentSymbol = currencySymbolsManager.getSymbol(currency.name)
-            if (currentSymbol != currency.name) {
-                currencySymbol.text = currentSymbol
-            } else  currencySymbol.text = ""
-
-            when (isDeleteAction) {
-                true -> addBtn.text = "-"
-                false -> addBtn.text = "+"
-            }
-            addBtn.setOnClickListener {
-                clickCurrency(currency)
+                when (isDeleteAction) {
+                    true -> addButton.text = context.string(R.string.minus)
+                    false -> addButton.text = context.string(R.string.plus)
+                }
+                addButton.setOnClickListener {
+                    clickCurrency(currency)
+                }
             }
         }
-    }
 
-    class DiffCallback : DiffUtil.ItemCallback<Currency>() {
-        override fun areItemsTheSame(old: Currency, new: Currency): Boolean =
-            old === new
-
-        override fun areContentsTheSame(old: Currency, new: Currency): Boolean =
-            old.value == new.value
     }
 }

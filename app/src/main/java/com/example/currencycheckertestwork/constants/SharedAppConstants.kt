@@ -10,3 +10,10 @@ enum class DataMode(val IntKey: Int) {
 
 const val RETROFIT_LOAD_ERROR = "error"
 const val HANDLER_DELAY = 1000L
+const val ACCESS_KEY = "access_key"
+const val FORMAT = "format"
+const val DB_CURRENT_CURRENCY = "saved_current_currency_list"
+const val DB_FAVOURITES = "favourite_items"
+const val OUR_CURRENCY_LIST = "ourCurrencyList"
+const val FAV_CURRENCY_NAME = "favCurrencyName"
+const val FAV_CURRENCY_VALUE = "favCurrencyValue"
