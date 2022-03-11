@@ -1,5 +1,8 @@
 package com.example.currencycheckertestwork.presentation.viewmodels
 
+import android.os.Handler
+import android.os.Looper
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.currencycheckertestwork.constants.DataMode
 import com.example.currencycheckertestwork.data.asDomainModel
@@ -8,10 +11,9 @@ import com.example.currencycheckertestwork.data.transformToFavouriteCurrency
 import com.example.currencycheckertestwork.domain.Currency
 import com.example.currencycheckertestwork.domain.interaction.GetCurrencyDataUseCase
 import com.example.currencycheckertestwork.domain.interaction.RoomUseCase
-import io.reactivex.Observable
-import io.reactivex.subjects.PublishSubject
 import java.io.IOException
 import java.util.*
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import javax.inject.Inject
@@ -21,26 +23,14 @@ class SharedViewModel @Inject constructor(
     private val roomUseCase: RoomUseCase
 ) : ViewModel() {
 
-    val favouriteListToView: PublishSubject<List<Currency>> = PublishSubject.create()
-    val sortedListToView: PublishSubject<List<Currency>> = PublishSubject.create()
-    val errorListener: PublishSubject<Boolean> = PublishSubject.create()
+    val favouriteListToView = MutableLiveData<List<Currency>>()
+    val sortedListToView = MutableLiveData<List<Currency>>()
+    val errorListener = MutableLiveData(false)
 
-    private val currentCurrencyList = mutableListOf<Currency>()
-    private val favouriteCurrencyList = mutableListOf<Currency>()
+    private val currentCurrencyList = CopyOnWriteArrayList<Currency>()
+    private val favouriteCurrencyList = CopyOnWriteArrayList<Currency>()
 
-    val currentCurrency: Observable<Unit> = roomUseCase.getFullList()
-        .map {
-            updateList(currentCurrencyList, it)
-            sortedListToView.onNext(it)
-        }
-    val favouriteCurrency: Observable<Unit> = roomUseCase.getAllFavourite()
-        .map {
-            updateList(favouriteCurrencyList, it)
-            favouriteListToView.onNext(it)
-        }
-
-    private val commonExecutor = Executors.newSingleThreadExecutor()
-    private val cycledExecutor = Executors.newSingleThreadScheduledExecutor()
+    private val commonExecutor by lazy { Executors.newSingleThreadExecutor() }
 
     fun loadData() {
 
@@ -52,26 +42,33 @@ class SharedViewModel @Inject constructor(
                     val body = response.body()
                     if (body != null) {
                         val list = response.body()!!.asDomainModel().value
-                        sortedListToView.onNext(list)
+                        runOnUi { sortedListToView.value = list }
                         roomUseCase.saveInRoom(
                             response.body()!!.asDomainModel().transformToDbModel()
                         )
                     }
                 }
             } catch (e: IOException) {
-                errorListener.onNext(true)
+                errorListener.postValue(true)
             }
+
+            try {
+                updateList(currentCurrencyList, roomUseCase.getFullList())
+                updateList(favouriteCurrencyList, roomUseCase.getAllFavourite())
+            } catch (e: IOException) {
+                errorListener.postValue(true)
+            }
+
+            runOnUi {
+                sortedListToView.value = currentCurrencyList
+                favouriteListToView.value = favouriteCurrencyList
+            }
+
         }
 
-//        for cycled updating favourites use -
-//        cycledExecutor.scheduleAtFixedRate(
-//            Runnable {
-//                //cycle favourite update here
-//                //for send to main thread - handler / runOnUiThread{}
-//            }, 0, 0.1.toLong(), TimeUnit.SECONDS
-//        )
-
     }
+
+    private fun runOnUi(runnable: Runnable) = Handler(Looper.getMainLooper()).post(runnable)
 
     private fun updateList(list: MutableList<Currency>, newValue: List<Currency>) =
         with(list) {
@@ -82,8 +79,13 @@ class SharedViewModel @Inject constructor(
 
     fun finalListToView(sortedMode: DataMode, isFavourite: Boolean) =
         when (isFavourite) {
-            true -> favouriteListToView.onNext(findOutFinalList(sortedMode, favouriteCurrencyList))
-            false -> sortedListToView.onNext(findOutFinalList(sortedMode, currentCurrencyList))
+            true -> favouriteListToView.postValue(
+                findOutFinalList(
+                    sortedMode,
+                    favouriteCurrencyList
+                )
+            )
+            false -> sortedListToView.postValue(findOutFinalList(sortedMode, currentCurrencyList))
         }
 
     private fun findOutFinalList(
@@ -112,14 +114,14 @@ class SharedViewModel @Inject constructor(
                     it.name.uppercase(Locale.getDefault())
                         .contains(text.uppercase(Locale.getDefault()))
                 }
-                favouriteListToView.onNext(finalList)
+                favouriteListToView.postValue(finalList)
             }
             false -> {
                 val finalList = currentCurrencyList.filter {
                     it.name.uppercase(Locale.getDefault())
                         .contains(text.uppercase(Locale.getDefault()))
                 }
-                sortedListToView.onNext(finalList)
+                sortedListToView.postValue(finalList)
             }
         }
 }

@@ -7,16 +7,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.room.Room
 import com.example.currencycheckertestwork.BuildConfig
 import com.example.currencycheckertestwork.data.CommonRepositoryImpl
-import com.example.currencycheckertestwork.data.SchedulerProviderImpl
 import com.example.currencycheckertestwork.data.api.ApiRetrofitService
 import com.example.currencycheckertestwork.data.storage.AppDatabase
 import com.example.currencycheckertestwork.domain.interaction.GetCurrencyDataUseCase
 import com.example.currencycheckertestwork.domain.interaction.RoomUseCase
-import com.example.currencycheckertestwork.domain.scheduler.SchedulerProvider
 import com.example.currencycheckertestwork.presentation.viewmodels.SharedViewModel
 import com.example.currencysymbols.CurrencySymbolsManager
 import com.example.currencysymbols.CurrencySymbolsManagerImpl
-import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Binds
@@ -79,7 +76,6 @@ class NetworkModule {
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .addConverterFactory(GsonConverterFactory.create())
-            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
             .build()
             .create(ApiRetrofitService::class.java)
     }
@@ -123,19 +119,13 @@ class RepositoryModule {
     @Provides
     fun provideCommonRepository(
         apiRetrofitService: ApiRetrofitService,
-        schedulerProvider: SchedulerProvider,
         appDatabase: AppDatabase
-    ): CommonRepositoryImpl {
-        return CommonRepositoryImpl(apiRetrofitService, schedulerProvider, appDatabase)
-    }
+    ): CommonRepositoryImpl = CommonRepositoryImpl(apiRetrofitService, appDatabase)
+
 
     @Provides
-    fun provideLinearLayoutManager(context: Context): LinearLayoutManager {
-        return LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
-    }
-
-    @Provides
-    fun provideSchedulerProvider(): SchedulerProvider = SchedulerProviderImpl()
+    fun provideLinearLayoutManager(context: Context): LinearLayoutManager =
+        LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
 
 }
 

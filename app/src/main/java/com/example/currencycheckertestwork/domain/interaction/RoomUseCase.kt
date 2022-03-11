@@ -4,7 +4,6 @@ import com.example.currencycheckertestwork.data.models.DbCurrentCurrency
 import com.example.currencycheckertestwork.data.models.DbFavouriteCurrency
 import com.example.currencycheckertestwork.domain.CommonRepository
 import com.example.currencycheckertestwork.domain.Currency
-import io.reactivex.Observable
 import javax.inject.Inject
 
 class RoomUseCase @Inject constructor(
@@ -14,8 +13,7 @@ class RoomUseCase @Inject constructor(
     fun saveInRoom(dbCurrentCurrency: DbCurrentCurrency) =
         commonRepository.saveDataInRoom(dbCurrentCurrency)
 
-    fun getFullList(): Observable<List<Currency>> =
-        commonRepository.getFullDataFromRoom()
+    fun getFullList(): List<Currency> = commonRepository.getFullDataFromRoom()
 
     fun saveFavourite(dbFavouriteCurrency: DbFavouriteCurrency) =
         commonRepository.saveFavourite(dbFavouriteCurrency)
@@ -23,6 +21,6 @@ class RoomUseCase @Inject constructor(
     fun deleteFavourite(name: String) =
         commonRepository.deleteFavourite(name)
 
-    fun getAllFavourite(): Observable<List<Currency>> =
+    fun getAllFavourite(): List<Currency> =
         commonRepository.getAllFavourite()
 }

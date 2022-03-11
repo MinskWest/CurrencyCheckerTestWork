@@ -12,4 +12,6 @@
     <string name="value_increase">value increase</string>
     <string name="value_decrease">value decrease</string>
     <string name="base_error">Error\ntry later</string>
+    <string name="plus">+</string>
+    <string name="minus">-</string>
 </resources>
