@@ -16,7 +16,6 @@ import com.example.currencycheckertestwork.domain.scheduler.SchedulerProvider
 import com.example.currencycheckertestwork.presentation.viewmodels.SharedViewModel
 import com.example.currencysymbols.CurrencySymbolsManager
 import com.example.currencysymbols.CurrencySymbolsManagerImpl
-import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Binds
@@ -30,7 +29,6 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Provider
-
 
 @Module
 class UseCasesModule() {
@@ -79,7 +77,6 @@ class NetworkModule {
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .addConverterFactory(GsonConverterFactory.create())
-            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
             .build()
             .create(ApiRetrofitService::class.java)
     }

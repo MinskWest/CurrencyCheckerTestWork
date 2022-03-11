@@ -1,5 +1,6 @@
 package com.example.currencycheckertestwork.presentation.fragments
 
+import android.annotation.SuppressLint
 import android.os.Handler
 import android.os.Looper
 import androidx.core.widget.addTextChangedListener
@@ -73,7 +74,7 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
     }
 
     private fun setupViews() {
-        with(binding) {
+        with(binding!!) {
             with(currencyRecyclerView) {
                 layoutManager = linearLayoutManager
                 adapter = currencyAdapter
@@ -101,7 +102,6 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
             searchTv.addTextChangedListener(onTextChanged = { text, _, _, _ ->
                 isSearchMode = !text.isNullOrEmpty()
                 viewModel.setSearch(text.toString(), isFavouriteMode)
-
             })
         }
     }
@@ -112,7 +112,7 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
         with(currencyAdapter) {
             submitList(list)
         }
-        binding.currencyRecyclerView.scrollToPosition(0)
+        binding?.currencyRecyclerView?.scrollToPosition(0)
     }
 
     private fun setUpSortClickListeners() {
@@ -120,11 +120,11 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
         alphabet_decrease.onClick { sortClickAction(MODE_SORTED_BY_NAME_VV) }
         value_increase.onClick { sortClickAction(MODE_SORTED_BY_VALUE) }
         value_decrease.onClick { sortClickAction(MODE_SORTED_BY_VALUE_VV) }
-        clickBackSortingLay.onClick { binding.sortView.setVisible(false) }
+        clickBackSortingLay.onClick { binding?.sortView?.setVisible(false) }
     }
 
     private fun sortClickAction(mode: DataMode) {
-        binding.sortView.setVisible(false)
+        binding?.sortView?.setVisible(false)
         viewModel.finalListToView(mode, isFavouriteMode)
     }
 
@@ -185,11 +185,12 @@ class CommonFragment : BaseFragment<FragmentCommonBinding>() {
         }
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private fun updateAction(newList: MutableList<Currency>) {
         with(currencyAdapter) {
             submitList(newList)
             notifyDataSetChanged()
         }
-        if (!isDeleteInsertFavAction) binding.currencyRecyclerView.scrollToPosition(0)
+        if (!isDeleteInsertFavAction) binding?.currencyRecyclerView?.scrollToPosition(0)
     }
 }

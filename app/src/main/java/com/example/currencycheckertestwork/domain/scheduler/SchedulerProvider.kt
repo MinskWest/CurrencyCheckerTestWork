@@ -1,8 +1,8 @@
 package com.example.currencycheckertestwork.domain.scheduler
 
-import io.reactivex.Scheduler
+import kotlinx.coroutines.CoroutineDispatcher
 
 interface SchedulerProvider {
-    fun main(): Scheduler
-    fun io(): Scheduler
+    fun main(): CoroutineDispatcher
+    fun io(): CoroutineDispatcher
 }
